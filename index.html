@@ -1,1 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relojería — Stock</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;font-size:14px;color:#1a1a1a;background:#f0f2f5;min-height:100vh}
+.app{max-width:1300px;margin:0 auto;padding:1.25rem 1rem}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:8px;background:#fff;border-radius:10px;padding:1rem 1.25rem;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.topbar h1{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
+.top-btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.sync-status{font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.sync-status.ok{background:#D4EDDA;color:#1A6B2E}
+.sync-status.syncing{background:#FFF3CD;color:#856404}
+.sync-status.error{background:#FCDEDE;color:#842029}
+.tabs{display:flex;gap:0;border-bottom:2px solid #e5e5e5;margin-bottom:0;background:#fff;border-radius:10px 10px 0 0;padding:0 1rem;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.tab{padding:10px 16px;font-size:13px;cursor:pointer;border:none;background:none;color:#666;border-bottom:2px solid transparent;margin-bottom:-2px;font-weight:500;transition:color .15s}
+.tab:hover{color:#185FA5}
+.tab.active{color:#185FA5;border-bottom:2px solid #185FA5}
+.tab-content{background:#fff;border-radius:0 0 10px 10px;padding:1.25rem;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:1rem}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(115px,1fr));gap:8px;margin-bottom:1.25rem}
+.card{background:#f8f9fa;border-radius:10px;padding:.75rem 1rem;border:1px solid #e8e8e8}
+.card .lbl{font-size:10px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.card .val{font-size:20px;font-weight:700}
+.card .sub{font-size:10px;color:#999;margin-top:2px}
+.filter-panel{background:#f8f9fa;border-radius:10px;padding:.9rem 1rem;margin-bottom:1rem;border:1px solid #e8e8e8}
+.filter-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:8px}
+.filter-row:last-child{margin-bottom:0}
+.filter-row label{display:block;font-size:10px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.filter-row input,.filter-row select{width:100%;height:30px;padding:0 8px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a1a;font-size:12px;outline:none}
+.filter-row input:focus,.filter-row select:focus{border-color:#185FA5}
+.filter-actions{display:flex;gap:6px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.btn{height:30px;padding:0 12px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a1a;cursor:pointer;font-size:12px;white-space:nowrap;display:inline-flex;align-items:center;gap:5px;font-weight:500}
+.btn:hover{background:#f0f0f0}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:#185FA5;color:#fff;border-color:#185FA5}
+.btn.primary:hover{background:#0C447C}
+.btn.green{background:#2D7A0F;color:#fff;border-color:#2D7A0F}
+.btn.green:hover{background:#205D0A}
+.btn.sm{height:26px;padding:0 8px;font-size:11px}
+.tbl-wrap{overflow-x:auto;border:1px solid #e5e5e5;border-radius:10px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{background:#f8f9fa}
+th{padding:7px 9px;text-align:left;font-weight:600;font-size:10px;color:#666;border-bottom:1px solid #e5e5e5;white-space:nowrap;cursor:pointer;user-select:none;text-transform:uppercase}
+th:hover{color:#185FA5}
+td{padding:6px 9px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.badge.ok{background:#D4EDDA;color:#1A6B2E}
+.badge.low{background:#FFF3CD;color:#856404}
+.badge.out{background:#FCDEDE;color:#842029}
+.badge.tipo{background:#E3F0FF;color:#185FA5;font-size:10px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:1.4rem;width:min(560px,95vw);max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.18)}
+.modal h2{font-size:15px;font-weight:600;margin-bottom:1rem}
+.form-row{margin-bottom:.7rem}
+.form-row label{display:block;font-size:10px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.form-row input,.form-row select,.form-row textarea{width:100%;height:32px;padding:0 9px;border-radius:7px;border:1px solid #ddd;background:#fff;color:#1a1a1a;font-size:13px;outline:none}
+.form-row input:focus,.form-row select:focus{border-color:#185FA5}
+.form-row textarea{height:auto;padding:7px 9px;resize:vertical}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.form-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px}
+.modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:1rem;padding-top:.8rem;border-top:1px solid #e5e5e5}
+.section-hidden{display:none}
+.pager{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:12px;color:#888}
+.pager-btns{display:flex;gap:4px;align-items:center}
+.hist-item{padding:8px 0;border-bottom:1px solid #f0f0f0;font-size:12px}
+.hist-item:last-child{border-bottom:none}
+.hist-meta{color:#aaa;font-size:11px;margin-top:2px}
+.marca-chip{display:inline-flex;align-items:center;gap:5px;background:#f0f4ff;border:1px solid #c8d8f8;border-radius:20px;padding:3px 10px 3px 12px;font-size:12px;margin:3px;font-weight:500}
+.marca-chip button{border:none;background:none;cursor:pointer;color:#aaa;font-size:14px;line-height:1;padding:0}
+.marca-chip button:hover{color:#C0392B}
+.search-results{border:1px solid #ddd;border-top:none;border-radius:0 0 8px 8px;max-height:160px;overflow-y:auto;display:none;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,.1);position:relative;z-index:10}
+.search-result-item{padding:7px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid #f0f0f0}
+.search-result-item:hover{background:#f0f4ff}
+.toast{position:fixed;bottom:20px;right:20px;background:#185FA5;color:#fff;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:opacity .3s;pointer-events:none;z-index:2000;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.toast.show{opacity:1}
+.empty-state{text-align:center;padding:2rem;color:#aaa;font-size:13px}
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.88);z-index:3000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.spinner{width:40px;height:40px;border:4px solid #e5e5e5;border-top-color:#185FA5;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:14px;color:#666;font-weight:500}
+.marca-nueva-form{background:#f0f4ff;border:1px solid #c8d8f8;border-radius:8px;padding:1rem;margin-bottom:1.2rem}
+.marca-nueva-form h3{font-size:13px;font-weight:600;color:#185FA5;margin-bottom:.75rem}
+</style>
+</head>
+<body>
 
+<div id="loading-overlay" class="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Conectando con Google Sheets...</div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<div class="app">
+  <div class="topbar">
+    <h1>⌚ Relojería — Stock</h1>
+    <div class="top-btns">
+      <span class="sync-status syncing" id="sync-status">⏳ Sincronizando...</span>
+      <button class="btn" onclick="cargarDatos()">🔄 Actualizar</button>
+      <button class="btn green" onclick="exportCSV('stock')">↓ CSV Stock</button>
+      <button class="btn green" onclick="exportCSV('ventas')">↓ CSV Ventas</button>
+      <button class="btn primary" onclick="openModal('nuevo')">+ Agregar reloj</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('stock',this)">📦 Stock</button>
+    <button class="tab" onclick="showTab('ventas',this)">💰 Ventas</button>
+    <button class="tab" onclick="showTab('marcas',this)">🏷️ Marcas</button>
+    <button class="tab" onclick="showTab('historial',this)">📋 Historial</button>
+  </div>
+
+  <!-- STOCK -->
+  <div class="tab-content" id="tab-stock">
+    <div class="cards" id="summary-cards"></div>
+    <div class="filter-panel">
+      <div class="filter-row">
+        <div><label>Buscar</label><input type="text" id="f-search" placeholder="Código, marca, tipo..." oninput="resetPage();renderTable()"></div>
+        <div><label>Marca</label><select id="f-marca" onchange="resetPage();renderTable()"><option value="">Todas</option></select></div>
+        <div><label>Tipo</label><select id="f-tipo" onchange="resetPage();renderTable()"><option value="">Todos</option></select></div>
+        <div><label>Estado</label>
+          <select id="f-estado" onchange="resetPage();renderTable()">
+            <option value="">Todos</option><option value="ok">En stock</option>
+            <option value="low">Stock bajo (≤2)</option><option value="out">Sin stock</option>
+          </select>
+        </div>
+        <div><label>Lugar</label>
+          <select id="f-lugar" onchange="resetPage();renderTable()">
+            <option value="">Todos</option><option value="deposito">Depósito</option>
+            <option value="thiers">Thier's</option><option value="lido">Lido</option>
+          </select>
+        </div>
+        <div><label>Costo mín. ($)</label><input type="number" id="f-cmin" placeholder="0" oninput="resetPage();renderTable()"></div>
+        <div><label>Costo máx. ($)</label><input type="number" id="f-cmax" placeholder="∞" oninput="resetPage();renderTable()"></div>
+        <div><label>Compra desde</label><input type="date" id="f-fdesde" onchange="resetPage();renderTable()"></div>
+      </div>
+      <div class="filter-actions">
+        <button class="btn sm" onclick="limpiarFiltros()">✕ Limpiar</button>
+        <span id="filter-count" style="font-size:11px;color:#888"></span>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th onclick="sortBy('marca')">Marca <span id="s-marca"></span></th>
+          <th onclick="sortBy('codigo')">Código <span id="s-codigo"></span></th>
+          <th onclick="sortBy('tipo')">Tipo <span id="s-tipo"></span></th>
+          <th onclick="sortBy('costo')">Costo <span id="s-costo"></span></th>
+          <th onclick="sortBy('pventa')">P.Venta <span id="s-pventa"></span></th>
+          <th onclick="sortBy('deposito')">Dep. <span id="s-deposito"></span></th>
+          <th onclick="sortBy('thiers')">Thier's <span id="s-thiers"></span></th>
+          <th onclick="sortBy('lido')">Lido <span id="s-lido"></span></th>
+          <th onclick="sortBy('total')">Total <span id="s-total"></span></th>
+          <th>Estado</th>
+          <th onclick="sortBy('fecha')">Ult.compra <span id="s-fecha"></span></th>
+          <th>Acciones</th>
+        </tr></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+    </div>
+    <div class="pager" id="pager"></div>
+  </div>
+
+  <!-- VENTAS -->
+  <div class="tab-content section-hidden" id="tab-ventas">
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.6fr);gap:1.5rem">
+      <div>
+        <h2 style="font-size:15px;font-weight:600;margin-bottom:1rem">Registrar venta</h2>
+        <div class="form-row">
+          <label>Buscar reloj</label>
+          <input type="text" id="v-search" placeholder="Código o marca..." oninput="buscarVenta()" autocomplete="off">
+          <div class="search-results" id="v-results"></div>
+        </div>
+        <div id="v-seleccionado" style="display:none;background:#f0f4ff;border:1px solid #c8d8f8;border-radius:8px;padding:9px;margin-bottom:10px;font-size:12px">
+          <strong id="v-sel-nombre"></strong>
+          <div id="v-sel-info" style="font-size:11px;color:#666;margin-top:3px"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-row"><label>Lugar</label>
+            <select id="v-lugar"><option value="thiers">Thier's</option><option value="lido">Lido</option><option value="deposito">Depósito</option></select>
+          </div>
+          <div class="form-row"><label>Precio venta ($)</label><input type="number" id="v-precio" placeholder="0"></div>
+          <div class="form-row"><label>Cantidad</label><input type="number" id="v-cantidad" value="1" min="1"></div>
+          <div class="form-row"><label>Fecha</label><input type="date" id="v-fecha"></div>
+        </div>
+        <div class="form-row"><label>Notas</label><textarea id="v-notas" rows="2"></textarea></div>
+        <button class="btn primary" style="width:100%;justify-content:center;height:34px" onclick="registrarVenta()">Registrar venta</button>
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <h2 style="font-size:15px;font-weight:600">Ventas registradas</h2>
+          <button class="btn sm green" onclick="exportCSV('ventas')">↓ CSV</button>
+        </div>
+        <div class="cards" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:1rem" id="v-summary"></div>
+        <div class="tbl-wrap">
+          <table><thead><tr><th>Fecha</th><th>Marca</th><th>Código</th><th>Lugar</th><th>Cant.</th><th>Precio</th><th>Ganancia</th></tr></thead>
+          <tbody id="ventas-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MARCAS -->
+  <div class="tab-content section-hidden" id="tab-marcas">
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:1.5rem">
+      <div>
+        <div class="marca-nueva-form">
+          <h3>➕ Agregar nueva marca con su primer código</h3>
+          <div class="form-row"><label>Nombre de la marca</label>
+            <input type="text" id="nueva-marca" placeholder="Ej: Seiko, Orient...">
+          </div>
+          <div class="form-row"><label>Código del primer reloj</label>
+            <input type="text" id="nueva-marca-codigo" placeholder="Ej: SUR123P1">
+          </div>
+          <div class="form-row"><label>Tipo</label>
+            <select id="nueva-marca-tipo"></select>
+          </div>
+          <div class="form-grid">
+            <div class="form-row"><label>Precio costo ($)</label><input type="number" id="nueva-marca-costo" placeholder="0"></div>
+            <div class="form-row"><label>Precio venta ($)</label><input type="number" id="nueva-marca-pventa" placeholder="0"></div>
+          </div>
+          <div class="form-grid3">
+            <div class="form-row"><label>Depósito</label><input type="number" id="nueva-marca-dep" value="0" min="0"></div>
+            <div class="form-row"><label>Thier's</label><input type="number" id="nueva-marca-thiers" value="0" min="0"></div>
+            <div class="form-row"><label>Lido</label><input type="number" id="nueva-marca-lido" value="0" min="0"></div>
+          </div>
+          <button class="btn primary" style="width:100%;justify-content:center;height:34px;margin-top:4px" onclick="agregarMarcaConCodigo()">Crear marca y agregar reloj</button>
+        </div>
+        <div id="marcas-list" style="line-height:2"></div>
+      </div>
+      <div>
+        <h2 style="font-size:15px;font-weight:600;margin-bottom:1rem">Estadísticas por marca</h2>
+        <div class="tbl-wrap">
+          <table><thead><tr><th>Marca</th><th>Refs.</th><th>Unidades</th><th>Valor costo</th><th>Sin stock</th></tr></thead>
+          <tbody id="marcas-stats-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="tab-content section-hidden" id="tab-historial">
+    <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:flex-end">
+      <div><label style="display:block;font-size:10px;color:#888;margin-bottom:3px;text-transform:uppercase;font-weight:600">Buscar</label>
+        <input type="text" style="height:30px;padding:0 9px;border-radius:7px;border:1px solid #ddd;font-size:12px;min-width:200px;outline:none" id="h-search" placeholder="Buscar..." oninput="renderHistorial()"></div>
+      <div><label style="display:block;font-size:10px;color:#888;margin-bottom:3px;text-transform:uppercase;font-weight:600">Tipo</label>
+        <select style="height:30px;padding:0 9px;border-radius:7px;border:1px solid #ddd;font-size:12px;outline:none" id="h-filter" onchange="renderHistorial()">
+          <option value="">Todos</option><option value="ingreso">Ingresos</option><option value="venta">Ventas</option><option value="ajuste">Ajustes</option>
+        </select></div>
+      <button class="btn sm green" onclick="exportCSV('historial')">↓ CSV</button>
+    </div>
+    <div id="historial-list"></div>
+  </div>
+</div>
+
+<!-- MODAL NUEVO/EDITAR -->
+<div class="modal-overlay" id="modal-nuevo">
+<div class="modal">
+  <h2 id="modal-title">Agregar reloj</h2>
+  <input type="hidden" id="edit-id">
+  <div class="form-grid">
+    <div class="form-row"><label>Marca</label><select id="f-m-marca"></select></div>
+    <div class="form-row"><label>Código</label><input type="text" id="f-m-codigo" placeholder="Ej: 96A115"></div>
+  </div>
+  <div class="form-row"><label>Tipo de reloj</label><select id="f-m-tipo"></select></div>
+  <div class="form-grid">
+    <div class="form-row"><label>Precio costo ($)</label><input type="number" id="f-m-costo" placeholder="0"></div>
+    <div class="form-row"><label>Precio venta ($)</label><input type="number" id="f-m-pventa" placeholder="0"></div>
+  </div>
+  <div class="form-grid3">
+    <div class="form-row"><label>Depósito</label><input type="number" id="f-m-dep" value="0" min="0"></div>
+    <div class="form-row"><label>Thier's</label><input type="number" id="f-m-thiers" value="0" min="0"></div>
+    <div class="form-row"><label>Lido</label><input type="number" id="f-m-lido" value="0" min="0"></div>
+  </div>
+  <div class="form-row"><label>Fecha última compra</label><input type="date" id="f-m-fecha"></div>
+  <div class="form-row"><label>Notas</label><textarea id="f-m-notas" rows="2"></textarea></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('nuevo')">Cancelar</button>
+    <button class="btn primary" onclick="guardarReloj()">💾 Guardar</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL AJUSTE -->
+<div class="modal-overlay" id="modal-ajuste">
+<div class="modal">
+  <h2>Ajustar stock</h2>
+  <input type="hidden" id="aj-id">
+  <div id="aj-info" style="background:#f0f4ff;border:1px solid #c8d8f8;border-radius:8px;padding:9px;margin-bottom:12px;font-size:13px"></div>
+  <div class="form-row"><label>Lugar</label>
+    <select id="aj-lugar"><option value="deposito">Depósito</option><option value="thiers">Thier's</option><option value="lido">Lido</option></select>
+  </div>
+  <div class="form-row"><label>Tipo de ajuste</label>
+    <select id="aj-tipo"><option value="ingreso">Ingreso (suma)</option><option value="egreso">Egreso (resta)</option><option value="setear">Setear exacto</option></select>
+  </div>
+  <div class="form-row"><label>Cantidad</label><input type="number" id="aj-cant" value="1" min="0"></div>
+  <div class="form-row"><label>Motivo</label><input type="text" id="aj-motivo" placeholder="Motivo opcional..."></div>
+  <div class="modal-footer">
+    <button class="btn" onclick="closeModal('ajuste')">Cancelar</button>
+    <button class="btn primary" onclick="aplicarAjuste()">Aplicar</button>
+  </div>
+</div>
+</div>
+
+<script>
+const API_URL='https://script.google.com/macros/s/AKfycbw4aST_st1oX3rLmeWtZcGD91NqvjRqIhZPXjJa-sPfCuuLUOLBY4QZtE7C2SkL_Ujo/exec';
+
+const TIPOS=["Análogo acero hombre","Análogo acero dama","Ana-digi acero dama","Análogo caucho hombre","Análogo cuero dama Océanos","Análogo caucho Junior","Análogo caucho dama","Análogo cuero hombre","Análogo cuero dama","Ana-digi caucho hombre","Ana-digi acero hombre","Despertador mecánico","Despertador cuarzo","Análogo cuero hombre Océanus","Digital acero hombre","Digital acero dama","Análogo acero dama Océanus","Digital caucho hombre","Digital caucho dama","Análogo acero hombre Océanus","Ana-digi cuero hombre","Análogo titanium hombre","Análogo titanium dama","Análogo titanium hombre cronómetro","Calculadora","Automático acero hombre","Automático acero dama","Análogo cronómetro cuero hombre","Análogo cronómetro acero hombre","Análogo brazalete acero dama","Despertador digital","Análogo cronómetro caucho hombre","Ampolleta","Ana-digi cuero dama","Análogo brazalete acero hombre","Digital específico caucho hombre","Análogo acero hombre T/Rolex","Análogo acero dama T/Rolex","Lapiceras / Bolígrafos","Encendedor","Radio","Reloj pared","Análogo brazalete enchapado hombre","Análogo brazalete enchapado dama","Análogo acero y caucho hombre","Análogo acero y caucho dama","Reloj bolsillo","Digital cuero hombre","Análogo Ac H. Eco Drive","Análogo Ac D. Eco Drive","Análogo Tita H. Eco Drive","Análogo Tita D. Eco Drive","Análogo Ac H. Crono Eco Drive","Timer","Agenda","Anal. Ac H. Mecha","Anal. Ac D. Mecha","Reloj escritorio","Anal. Ac H. Water Resist","Anal. Ac D. W.R.","Anal. Titanium H. Automático","Digital específico caucho dama","Anal. Crono acero dama","Anal. Crono acero Juniors","Crono Tita H. Eco Drive / Crono Ac.","An. Cuero H. Eco Drive"];
+
+const INITIAL_MARCAS=['Bulova','Citizen','Casio','Seiko','Festina','Caterpillar','Tissot','Longines','Tag Heuer','Swatch','Orient','Invicta','Fossil','Armani Exchange','Michael Kors','Guess','Calvin Klein','Hugo Boss','Emporio Armani','Pulsar','Lorus'];
+
+const INITIAL_ITEMS = [{"marca":"Casio","codigo":"F95W","tipo":"Digital caucho hombre","costo":34,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"FT110HL","tipo":"Digital cuero hombre","costo":45.43,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"FT200W","tipo":"Digital específico caucho hombre","costo":43.81,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"FT500VW","tipo":"Análogo caucho hombre","costo":29.81,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"G1400D","tipo":"Análogo acero hombre","costo":590,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"G1500BD","tipo":"Ana-digi acero hombre","costo":500.03,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"G1710D","tipo":"Ana-digi acero hombre","costo":162.5,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"G1800D","tipo":"Ana-digi acero hombre","costo":179.11,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"G8000","tipo":"Digital específico caucho hombre","costo":74.48,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"GA1000","tipo":"Ana-digi caucho hombre","costo":365.52,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"GA110GB","tipo":"Digital específico caucho hombre","costo":223.43,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"GA110RG","tipo":"Ana-digi caucho hombre","costo":263.21,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"GA150BW","tipo":"Ana-digi caucho hombre","costo":258.51,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"GA200","tipo":"Ana-digi caucho hombre","costo":211.11,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"GDX6900FB","tipo":"Digital específico caucho hombre","costo":210.97,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"GLS6900","tipo":"Digital específico caucho hombre","costo":140,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"HS1000","tipo":"Ampolleta","costo":78.2,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LA201W","tipo":"Digital acero hombre","costo":41.67,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LA680WA","tipo":"Digital acero dama","costo":67,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LA680WEGB","tipo":"Digital acero dama","costo":79,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LCF20","tipo":"Digital caucho dama","costo":52,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LDF10","tipo":"Digital específico caucho hombre","costo":37,"pventa":0,"deposito":0,"thiers":1,"lido":1,"fecha":"","notas":""},{"marca":"Casio","codigo":"LDF20","tipo":"Digital específico caucho hombre","costo":43.02,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LF100WH","tipo":"Digital caucho dama","costo":60,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LQ124","tipo":"Análogo caucho dama","costo":10.89,"pventa":0,"deposito":1,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LQ124B","tipo":"Análogo caucho dama","costo":11.01,"pventa":0,"deposito":1,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LQ47","tipo":"Análogo caucho dama","costo":12,"pventa":0,"deposito":0,"thiers":1,"lido":1,"fecha":"","notas":""},{"marca":"Casio","codigo":"LRW200H","tipo":"Análogo caucho dama","costo":52,"pventa":0,"deposito":1,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTH3001K","tipo":"Análogo cuero dama","costo":35,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1127E","tipo":"Análogo cuero dama","costo":31,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1128G","tipo":"Análogo acero dama","costo":53,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1129A","tipo":"Análogo acero dama","costo":41,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1170A","tipo":"Análogo acero dama","costo":51,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1183A","tipo":"Análogo acero dama","costo":51,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1191A","tipo":"Análogo acero dama","costo":49.4,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1215A","tipo":"Análogo acero dama","costo":57,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1230D","tipo":"Análogo acero dama","costo":49,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1237D","tipo":"Análogo acero dama","costo":44,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1238D","tipo":"Análogo acero dama","costo":54.97,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1241D","tipo":"Análogo acero dama","costo":48,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1294D","tipo":"Análogo acero dama","costo":59,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1295D","tipo":"Análogo acero dama","costo":91,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1302D","tipo":"Análogo acero dama","costo":60,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1302SG","tipo":"Análogo acero dama","costo":86,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"LTP1303SG","tipo":"Análogo acero dama","costo":81,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MDV303D","tipo":"Análogo acero hombre","costo":150.81,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MQ24","tipo":"Análogo caucho hombre","costo":15.5,"pventa":0,"deposito":1,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MQ30W","tipo":"Análogo caucho hombre","costo":15.1,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MQ398","tipo":"Análogo cuero hombre","costo":18,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MQ546","tipo":"Análogo cuero hombre","costo":30,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MQ71","tipo":"Análogo caucho dama","costo":20,"pventa":0,"deposito":1,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MQ76","tipo":"Análogo caucho hombre","costo":10.77,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MQ97","tipo":"Análogo caucho hombre","costo":15,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MRW200H","tipo":"Análogo caucho hombre","costo":35,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MRW200HD","tipo":"Análogo acero hombre","costo":77,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MRW210H","tipo":"Análogo caucho hombre","costo":58,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MRWS300H","tipo":"Análogo caucho hombre","costo":83.3,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MSG151","tipo":"Digital específico caucho hombre","costo":128.9,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTA2003D","tipo":"Ana-digi acero hombre","costo":50.96,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTD1005A","tipo":"Análogo titanium hombre","costo":92,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTD1070","tipo":"Análogo caucho hombre","costo":103,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTD1071D","tipo":"Análogo acero hombre","costo":145.46,"pventa":0,"deposito":1,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTD1082","tipo":"Análogo acero y caucho hombre","costo":159.74,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTH3015D","tipo":"Análogo acero y caucho hombre","costo":28.9,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1004Q","tipo":"Análogo cuero hombre","costo":14.45,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1064A","tipo":"Análogo acero hombre","costo":21,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1128G","tipo":"Análogo acero hombre","costo":53.5,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1129G","tipo":"Análogo acero hombre","costo":62,"pventa":0,"deposito":1,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1141G","tipo":"Análogo acero hombre","costo":60,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1164A","tipo":"Análogo acero hombre","costo":33.67,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1165A","tipo":"Análogo acero hombre","costo":47,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1169D","tipo":"Análogo acero hombre","costo":35.87,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1174A","tipo":"Análogo acero hombre","costo":51,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1191A","tipo":"Análogo acero hombre","costo":55,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1212A","tipo":"Análogo acero hombre","costo":42.58,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1216A","tipo":"Análogo acero hombre","costo":46,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1235GL","tipo":"Análogo acero hombre","costo":46,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1265D","tipo":"Análogo acero hombre","costo":67,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1274SG","tipo":"Análogo acero hombre","costo":54,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1275SG","tipo":"Análogo acero hombre","costo":52.6,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1290D","tipo":"Análogo acero hombre","costo":86,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1290L","tipo":"Análogo cuero hombre","costo":90,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1298D","tipo":"Análogo acero hombre","costo":55.44,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1300D","tipo":"Análogo acero hombre","costo":113,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1300SG","tipo":"Análogo acero hombre","costo":135,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1302SG","tipo":"Análogo acero hombre","costo":79,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1303SG","tipo":"Análogo acero hombre","costo":67,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1318GD","tipo":"Análogo acero hombre","costo":100.27,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1327D","tipo":"Análogo acero hombre","costo":67.12,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Casio","codigo":"MTP1330D","tipo":"Análogo acero hombre","costo":87.8,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BJ3881-50A","tipo":"Análogo acero hombre","costo":97,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":"WR"},{"marca":"Citizen","codigo":"BJ643156A","tipo":"Análogo Ac H. Eco Drive","costo":162,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BJ643857E","tipo":"Análogo acero hombre","costo":160,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BK184058B","tipo":"Análogo acero hombre","costo":99,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BK184058F","tipo":"Análogo acero hombre","costo":178,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BK193065E","tipo":"Análogo acero hombre","costo":148,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BK230254P","tipo":"Análogo brazalete enchapado hombre","costo":168,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BK241051A","tipo":"Análogo titanium hombre","costo":258,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BK314458N","tipo":"Análogo acero hombre T/Rolex","costo":78.3,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BL600501E","tipo":"Análogo cuero hombre","costo":207,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BM622079A","tipo":"Análogo Ac H. Eco Drive","costo":180,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BM643157A","tipo":"Análogo Ac H. Eco Drive","costo":172,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BM656054H","tipo":"Análogo Tita H. Eco Drive","costo":315,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BM688053B","tipo":"Análogo titanium hombre","costo":338,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BM692051A","tipo":"Análogo Ac H. Eco Drive","costo":338,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BM708151E","tipo":"Análogo Tita H. Eco Drive","costo":338,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BM709450A","tipo":"Análogo Ac H. Eco Drive","costo":263,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BM714054A","tipo":"Análogo Ac H. Eco Drive","costo":254,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BM724050A","tipo":"Análogo Tita H. Eco Drive","costo":316,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BM724050E","tipo":"Análogo Tita H. Eco Drive","costo":317,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BM732087B","tipo":"Análogo Ac H. Eco Drive","costo":175,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BM745081L","tipo":"Análogo acero hombre","costo":215,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"BU300454E","tipo":"Análogo Ac H. Eco Drive","costo":347,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"CA013058E","tipo":"Análogo Ac H. Eco Drive","costo":418,"pventa":0,"deposito":1,"thiers":0,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"CA019056B","tipo":"Análogo titanium hombre","costo":368,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"CA021051A","tipo":"Anal. Crono acero Juniors","costo":472,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":"Crono tita eco drive"},{"marca":"Citizen","codigo":"CA036058A","tipo":"Análogo Ac H. Crono Eco Drive","costo":379,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"CA401457E","tipo":"Crono Tita H. Eco Drive","costo":629,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"CA431054A","tipo":"Crono Tita H. Eco Drive","costo":572,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"CA433685E","tipo":"Análogo Ac H. Crono Eco Drive","costo":320,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"EC7542-39P","tipo":"Análogo cuero dama","costo":49.32,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"EC7812-01B","tipo":"Análogo cuero dama","costo":67.16,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"ED2602-05B","tipo":"Análogo cuero dama","costo":57.71,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"ED7010-07L","tipo":"Análogo acero y caucho hombre","costo":57.71,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"ED809053D","tipo":"Análogo acero dama","costo":234,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"ED811457A","tipo":"Análogo acero hombre","costo":265,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"ED812453A","tipo":"Análogo acero dama","costo":265,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"ED817056D","tipo":"Análogo acero dama","costo":193,"pventa":0,"deposito":1,"thiers":0,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"ED818354A","tipo":"Análogo acero hombre","costo":164,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"EG245258E","tipo":"Análogo Ac D. Eco Drive","costo":323,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Citizen","codigo":"EH4033-02","tipo":"Análogo acero dama","costo":119.63,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":"WR"},{"marca":"Citizen","codigo":"EJ507251A","tipo":"Ana-digi acero dama","costo":132,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":"braz dorado"},{"marca":"Citizen","codigo":"EJ590051A","tipo":"Ana-digi acero dama","costo":123,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":"braz acero"},{"marca":"Citizen","codigo":"EJ605457E","tipo":"Análogo acero dama","costo":157,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"AJ14111627","tipo":"Análogo caucho hombre","costo":158,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"AJ16121127","tipo":"Análogo caucho hombre","costo":153,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"AO14111323","tipo":"Análogo acero hombre","costo":163,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"E114021100","tipo":"Análogo acero hombre","costo":105,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":"SMART"},{"marca":"Caterpillar","codigo":"E114026100","tipo":"Análogo acero hombre","costo":105,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":"SMART"},{"marca":"Caterpillar","codigo":"E116021100","tipo":"Análogo acero hombre","costo":105,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":"SMART"},{"marca":"Caterpillar","codigo":"J015B00255","tipo":"Reloj bolsillo","costo":47,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":"PULSERA"},{"marca":"Caterpillar","codigo":"J029B30119","tipo":"Reloj bolsillo","costo":40,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":"PULSERA"},{"marca":"Caterpillar","codigo":"JO13B08114","tipo":"Reloj bolsillo","costo":51,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":"PULSERA"},{"marca":"Caterpillar","codigo":"JO17B30117","tipo":"Reloj bolsillo","costo":0,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":"PULSERA"},{"marca":"Caterpillar","codigo":"K019121139","tipo":"Análogo acero hombre","costo":161,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"LJ10026626","tipo":"Análogo caucho hombre","costo":78,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"LJ14024427","tipo":"Análogo caucho hombre","costo":78,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"LJ16027127","tipo":"Análogo caucho hombre","costo":77.3,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"LK18128118","tipo":"Análogo caucho hombre","costo":93,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"LN16028138","tipo":"Análogo caucho hombre","costo":93,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"LR16123138","tipo":"Análogo caucho hombre","costo":107,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"LR16127137","tipo":"Análogo caucho hombre","costo":107,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"LU16027126","tipo":"Análogo caucho hombre","costo":96,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"MA16521731","tipo":"Ana-digi caucho hombre","costo":86,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"NH14135232","tipo":"Análogo cuero hombre","costo":114,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"NI16934131","tipo":"Análogo caucho hombre","costo":168,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"NL14111232","tipo":"Análogo caucho hombre","costo":142,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"OC16721142","tipo":"Análogo caucho hombre","costo":136,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"OF14727247","tipo":"Análogo caucho hombre","costo":136,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"PK16112137","tipo":"Análogo acero hombre","costo":108,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"PO16168138","tipo":"Análogo cuero hombre","costo":124,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"PP16964134","tipo":"Análogo cuero hombre","costo":158,"pventa":0,"deposito":1,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"QB16116137","tipo":"Análogo acero hombre","costo":130,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"S714121131","tipo":"Análogo acero y caucho hombre","costo":210,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"YN14121128","tipo":"Análogo caucho hombre","costo":158,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"YO14911124","tipo":"Análogo acero hombre","costo":187,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Caterpillar","codigo":"YS14011232","tipo":"Análogo acero hombre","costo":141,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16047-1","tipo":"Análogo acero hombre","costo":198,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16047-2","tipo":"Análogo acero hombre","costo":100,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16113-3","tipo":"Análogo acero dama","costo":205,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16169-2","tipo":"Análogo cronómetro acero hombre","costo":90,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16172-7","tipo":"Análogo acero dama","costo":100,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16178-3","tipo":"Análogo titanium hombre","costo":100,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16179-3","tipo":"Análogo titanium dama","costo":485,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16288-7","tipo":"Análogo acero hombre","costo":220,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16291-8","tipo":"Análogo cronómetro acero hombre","costo":90,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16365-4","tipo":"Análogo acero dama","costo":242,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16382-1","tipo":"Análogo cronómetro caucho hombre","costo":154,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16386-5","tipo":"Análogo acero hombre","costo":193,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16395-2","tipo":"Análogo acero dama","costo":156,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16455-3","tipo":"Análogo cuero hombre","costo":137,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16484-2","tipo":"Análogo acero dama","costo":273,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16488-1","tipo":"Análogo acero hombre","costo":193,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16489-1","tipo":"Análogo cronómetro cuero hombre","costo":113,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16492-5","tipo":"Análogo caucho dama","costo":240,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16526-1","tipo":"Análogo cronómetro caucho hombre","costo":130,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16541-4","tipo":"Análogo caucho dama","costo":316,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16576-3","tipo":"Análogo acero hombre","costo":197,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16577-3","tipo":"Análogo cronómetro acero hombre","costo":262,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16587-3","tipo":"Análogo acero dama","costo":287,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16588-2","tipo":"Análogo acero dama","costo":273,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16588-3","tipo":"Análogo acero dama","costo":383,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16601-4","tipo":"Análogo cronómetro caucho hombre","costo":161,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16626-1","tipo":"Análogo acero dama","costo":144,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16632-2","tipo":"Análogo acero hombre","costo":289,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16637-2","tipo":"Análogo acero dama","costo":167,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16638-1","tipo":"Análogo acero hombre","costo":300,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16656-3","tipo":"Análogo cronómetro acero hombre","costo":388,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16659-5","tipo":"Análogo cronómetro caucho hombre","costo":175,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16670-6","tipo":"Análogo acero y caucho hombre","costo":394,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16699-2","tipo":"Análogo acero dama","costo":344,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16699-3","tipo":"Análogo acero dama","costo":142,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16708-2","tipo":"Análogo acero dama","costo":97,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16711-3","tipo":"Análogo acero dama","costo":161,"pventa":0,"deposito":1,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16720-2","tipo":"Análogo acero dama","costo":84,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16790-F","tipo":"Análogo acero dama","costo":192,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16816-1","tipo":"Análogo acero dama","costo":280,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16819-3","tipo":"Análogo cronómetro acero hombre","costo":99,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16867-1","tipo":"Análogo acero hombre","costo":107,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16925-2","tipo":"Análogo acero dama","costo":113,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16940-1","tipo":"Análogo acero dama","costo":258,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""},{"marca":"Festina","codigo":"F16970-1","tipo":"Análogo cronómetro caucho hombre","costo":258,"pventa":0,"deposito":0,"thiers":1,"lido":0,"fecha":"","notas":""}];
+
+let marcas=[],items=[],ventas=[],historial=[];
+let nextId=1,page=0;const PER=20;
+let sortCol='',sortDir=1,ventaItem=null,saving=false;
+
+// ─── API ──────────────────────────────────────────────────────────────────────
+async function apiGet(){
+  return new Promise((resolve, reject) => {
+    const cbName = '__gsCallback_' + Date.now();
+    const script = document.createElement('script');
+    window[cbName] = function(data) {
+      delete window[cbName];
+      document.body.removeChild(script);
+      resolve(data);
+    };
+    script.onerror = () => { delete window[cbName]; reject(new Error('Script error')); };
+    script.src = API_URL + '?action=getAll&callback=' + cbName + '&t=' + Date.now();
+    document.body.appendChild(script);
+  });
+}
+async function apiPost(body){
+  const res=await fetch(API_URL,{method:'POST',body:JSON.stringify(body)});
+  return res.json();
+}
+function sheetsToItems(rows){
+  if(!rows||rows.length<2)return[];
+  const h=rows[0];
+  return rows.slice(1).filter(r=>r.some(c=>c!=='')).map(r=>{
+    const o={};h.forEach((k,i)=>o[k]=r[i]??'');
+    ['costo','pventa','deposito','thiers','lido','id'].forEach(k=>{if(o[k]!==undefined)o[k]=parseFloat(o[k])||0;});
+    return o;
+  });
+}
+function sheetsToArr(rows,numCols){
+  if(!rows||rows.length<2)return[];
+  const h=rows[0];
+  return rows.slice(1).filter(r=>r.some(c=>c!=='')).map(r=>{
+    const o={};h.forEach((k,i)=>o[k]=r[i]??'');
+    (numCols||[]).forEach(k=>{if(o[k]!==undefined)o[k]=parseFloat(o[k])||0;});
+    return o;
+  });
+}
+function itemsToSheet(arr){
+  const h=['id','marca','codigo','tipo','costo','pventa','deposito','thiers','lido','fecha','notas'];
+  return[h,...arr.map(i=>h.map(k=>i[k]??''))];
+}
+function ventasToSheet(arr){
+  const h=['fecha','marca','codigo','tipo','lugar','cant','precio','costo','notas'];
+  return[h,...arr.map(v=>h.map(k=>v[k]??''))];
+}
+function histToSheet(arr){return[['fecha','tipo','desc'],...arr.map(h=>[h.fecha,h.tipo,h.desc])];}
+function marcasToSheet(arr){return[['marca'],...arr.map(m=>[m])];}
+
+async function guardarSheet(name){
+  let rows;
+  if(name==='stock')rows=itemsToSheet(items);
+  else if(name==='ventas')rows=ventasToSheet(ventas);
+  else if(name==='historial')rows=histToSheet(historial);
+  else rows=marcasToSheet(marcas);
+  const r=await apiPost({action:'saveSheet',sheetName:name,rows});
+  if(!r.ok)throw new Error('Error guardando '+name);
+}
+async function save(sheets){
+  if(saving)return;saving=true;setSync('syncing');
+  try{for(const s of(sheets||['stock','ventas','historial','marcas']))await guardarSheet(s);setSync('ok');}
+  catch(e){setSync('error');toast('❌ Error al guardar','#C0392B');console.error(e);}
+  saving=false;
+}
+
+async function cargarDatos(){
+  showLoading('Conectando con Google Sheets...');setSync('syncing');
+  try{
+    const res=await apiGet();
+    if(!res.ok)throw new Error('Error');
+    const d=res.data;
+    items=sheetsToItems(d.stock);
+    ventas=sheetsToArr(d.ventas,['cant','precio','costo']);
+    historial=sheetsToArr(d.historial,[]);
+    const mArr=d.marcas&&d.marcas.length>1?d.marcas.slice(1).map(r=>r[0]).filter(Boolean):[];
+    marcas=mArr.length?mArr:INITIAL_MARCAS.slice();
+    if(items.length===0){
+      items=INITIAL_ITEMS.map((x,i)=>({...x,id:i+1}));
+      // Asegurar marcas del PDF
+      ['Casio','Citizen','Caterpillar','Festina'].forEach(m=>{if(!marcas.includes(m))marcas.push(m);});
+      await save(['stock','marcas']);
+    } else {
+      // Asegurar que las marcas del PDF estén en la lista
+      ['Casio','Citizen','Caterpillar','Festina'].forEach(m=>{if(!marcas.includes(m))marcas.push(m);});
+    }
+    nextId=items.length?Math.max(...items.map(i=>i.id))+1:1;
+    setSync('ok');populateFilters();renderTable();hideLoading();
+  }catch(e){
+    setSync('error');hideLoading();
+    toast('⚠️ Error de conexión','#C0392B');console.error(e);
+  }
+}
+
+// ─── UI helpers ───────────────────────────────────────────────────────────────
+function setSync(s){
+  const el=document.getElementById('sync-status');
+  el.className='sync-status '+s;
+  el.textContent={ok:'✅ Sincronizado',syncing:'⏳ Guardando...',error:'❌ Sin conexión'}[s];
+}
+function showLoading(msg){document.getElementById('loading-text').textContent=msg||'Cargando...';document.getElementById('loading-overlay').style.display='flex';}
+function hideLoading(){document.getElementById('loading-overlay').style.display='none';}
+function toast(msg,color){const el=document.getElementById('toast');el.textContent=msg;el.style.background=color||'#185FA5';el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800);}
+
+// ─── Lógica stock ─────────────────────────────────────────────────────────────
+function estado(i){const t=(i.deposito||0)+(i.thiers||0)+(i.lido||0);return t===0?'out':t<=2?'low':'ok';}
+function badgeH(e){const m={ok:'En stock',low:'Stock bajo',out:'Sin stock'};return '<span class="badge '+e+'">'+m[e]+'</span>';}
+
+function filteredItems(){
+  const q=(document.getElementById('f-search').value||'').toLowerCase();
+  const m=document.getElementById('f-marca').value;
+  const t=document.getElementById('f-tipo').value;
+  const e=document.getElementById('f-estado').value;
+  const l=document.getElementById('f-lugar').value;
+  const cmin=parseFloat(document.getElementById('f-cmin').value)||0;
+  const cmax=parseFloat(document.getElementById('f-cmax').value)||Infinity;
+  const fd=document.getElementById('f-fdesde').value;
+  return items.filter(i=>{
+    if(q&&!((i.marca+' '+i.codigo+' '+i.tipo+' '+(i.notas||'')).toLowerCase().includes(q)))return false;
+    if(m&&i.marca!==m)return false;
+    if(t&&i.tipo!==t)return false;
+    if(e&&estado(i)!==e)return false;
+    if(l&&(i[l]||0)===0)return false;
+    if(i.costo<cmin||i.costo>cmax)return false;
+    if(fd&&i.fecha&&i.fecha<fd)return false;
+    return true;
+  }).map(i=>({...i,total:(i.deposito||0)+(i.thiers||0)+(i.lido||0)}))
+  .sort((a,b)=>{
+    if(!sortCol)return 0;
+    let av=a[sortCol]??'',bv=b[sortCol]??'';
+    if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}
+    return av<bv?-sortDir:av>bv?sortDir:0;
+  });
+}
+
+function resetPage(){page=0;}
+function sortBy(col){
+  sortDir=sortCol===col?-sortDir:1;sortCol=col;
+  document.querySelectorAll('th span[id^="s-"]').forEach(el=>el.textContent='');
+  const el=document.getElementById('s-'+col);if(el)el.textContent=sortDir===1?' ▲':' ▼';
+  renderPage();
+}
+function renderTable(){populateFilters();renderSummary();renderPage();}
+function renderPage(){
+  const fi=filteredItems();const total=fi.length;
+  document.getElementById('filter-count').textContent=total+' resultado'+(total!==1?'s':'');
+  const slice=fi.slice(page*PER,(page+1)*PER);
+  const tb=document.getElementById('tbl-body');
+  if(!slice.length){tb.innerHTML='<tr><td colspan="12"><div class="empty-state">Sin resultados.</div></td></tr>';return;}
+  tb.innerHTML=slice.map(i=>'<tr><td><strong>'+i.marca+'</strong></td><td style="font-family:monospace;font-size:11px;font-weight:600">'+i.codigo+'</td><td><span class="badge tipo" title="'+i.tipo+'">'+i.tipo+'</span></td><td>$'+Number(i.costo).toLocaleString('es-AR')+'</td><td>'+(i.pventa?'$'+Number(i.pventa).toLocaleString('es-AR'):'<span style="color:#ccc">—</span>')+'</td><td style="text-align:center">'+(i.deposito||0)+'</td><td style="text-align:center">'+(i.thiers||0)+'</td><td style="text-align:center">'+(i.lido||0)+'</td><td style="text-align:center;font-weight:700">'+i.total+'</td><td>'+badgeH(estado(i))+'</td><td style="font-size:11px;color:#999">'+(i.fecha||'—')+'</td><td style="white-space:nowrap"><button class="btn sm" onclick="editarItem('+i.id+')">✏️</button> <button class="btn sm" onclick="ajustarItem('+i.id+')">±</button></td></tr>').join('');
+  const maxP=Math.max(0,Math.ceil(total/PER)-1);
+  document.getElementById('pager').innerHTML='<span>'+Math.min(page*PER+1,total)+'–'+Math.min((page+1)*PER,total)+' de '+total+'</span><div class="pager-btns"><button class="btn sm" onclick="goPage(0)" '+(page===0?'disabled':'')+'>«</button><button class="btn sm" onclick="goPage('+(page-1)+')" '+(page===0?'disabled':'')+'>‹</button><span style="font-size:12px;padding:0 6px">Pág '+(page+1)+'/'+(maxP+1)+'</span><button class="btn sm" onclick="goPage('+(page+1)+')" '+(page>=maxP?'disabled':'')+'>›</button><button class="btn sm" onclick="goPage('+maxP+')" '+(page>=maxP?'disabled':'')+'>»</button></div>';
+}
+function goPage(p){const max=Math.max(0,Math.ceil(filteredItems().length/PER)-1);page=Math.max(0,Math.min(p,max));renderPage();}
+
+function renderSummary(){
+  const total=items.reduce((a,i)=>a+(i.deposito||0)+(i.thiers||0)+(i.lido||0),0);
+  const low=items.filter(i=>estado(i)==='low').length;
+  const out=items.filter(i=>estado(i)==='out').length;
+  const val=items.reduce((a,i)=>a+i.costo*((i.deposito||0)+(i.thiers||0)+(i.lido||0)),0);
+  const factu=ventas.reduce((a,v)=>a+(v.precio||0)*v.cant,0);
+  const mc=[...new Set(items.map(i=>i.marca))].length;
+  document.getElementById('summary-cards').innerHTML=
+    '<div class="card"><div class="lbl">Marcas</div><div class="val">'+mc+'</div><div class="sub">activas</div></div>'+
+    '<div class="card"><div class="lbl">Referencias</div><div class="val">'+items.length+'</div><div class="sub">modelos</div></div>'+
+    '<div class="card"><div class="lbl">En stock</div><div class="val">'+total+'</div><div class="sub">unidades</div></div>'+
+    '<div class="card"><div class="lbl">Stock bajo</div><div class="val" style="color:#856404">'+low+'</div><div class="sub">≤ 2 unid.</div></div>'+
+    '<div class="card"><div class="lbl">Sin stock</div><div class="val" style="color:#842029">'+out+'</div><div class="sub">agotados</div></div>'+
+    '<div class="card"><div class="lbl">Valor inv.</div><div class="val" style="font-size:14px">$'+val.toLocaleString('es-AR')+'</div><div class="sub">costo</div></div>'+
+    '<div class="card"><div class="lbl">Facturado</div><div class="val" style="font-size:14px">$'+factu.toLocaleString('es-AR')+'</div><div class="sub">ventas</div></div>';
+}
+
+function populateFilters(){
+  const cm=document.getElementById('f-marca').value;
+  const ct=document.getElementById('f-tipo').value;
+  document.getElementById('f-marca').innerHTML='<option value="">Todas las marcas</option>'+[...new Set(items.map(i=>i.marca))].sort().map(m=>'<option'+(m===cm?' selected':'')+'>'+m+'</option>').join('');
+  document.getElementById('f-tipo').innerHTML='<option value="">Todos los tipos</option>'+TIPOS.map(t=>'<option'+(t===ct?' selected':'')+'>'+t+'</option>').join('');
+  const marcaSelects=['f-m-marca'];
+  marcaSelects.forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=marcas.sort().map(m=>'<option>'+m+'</option>').join('');});
+  const tipoSelects=['f-m-tipo','nueva-marca-tipo'];
+  tipoSelects.forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=TIPOS.map(t=>'<option>'+t+'</option>').join('');});
+}
+
+function limpiarFiltros(){
+  ['f-search','f-cmin','f-cmax','f-fdesde'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['f-marca','f-tipo','f-estado','f-lugar'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  resetPage();renderTable();
+}
+
+function openModal(id){
+  if(id==='nuevo'){
+    document.getElementById('modal-title').textContent='Agregar reloj';
+    document.getElementById('edit-id').value='';
+    ['f-m-codigo','f-m-notas'].forEach(x=>document.getElementById(x).value='');
+    ['f-m-costo','f-m-pventa'].forEach(x=>document.getElementById(x).value='');
+    ['f-m-dep','f-m-thiers','f-m-lido'].forEach(x=>document.getElementById(x).value='0');
+    document.getElementById('f-m-fecha').value=new Date().toISOString().split('T')[0];
+    populateFilters();
+  }
+  document.getElementById('modal-'+id).classList.add('open');
+}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open');}
+
+function editarItem(id){
+  const i=items.find(x=>x.id===id);if(!i)return;
+  populateFilters();
+  document.getElementById('modal-title').textContent='Editar reloj';
+  document.getElementById('edit-id').value=id;
+  document.getElementById('f-m-marca').value=i.marca;
+  document.getElementById('f-m-codigo').value=i.codigo;
+  document.getElementById('f-m-tipo').value=i.tipo;
+  document.getElementById('f-m-costo').value=i.costo;
+  document.getElementById('f-m-pventa').value=i.pventa||'';
+  document.getElementById('f-m-dep').value=i.deposito||0;
+  document.getElementById('f-m-thiers').value=i.thiers||0;
+  document.getElementById('f-m-lido').value=i.lido||0;
+  document.getElementById('f-m-fecha').value=i.fecha||'';
+  document.getElementById('f-m-notas').value=i.notas||'';
+  openModal('nuevo');
+}
+
+async function guardarReloj(){
+  const eid=document.getElementById('edit-id').value;
+  const obj={marca:document.getElementById('f-m-marca').value,codigo:document.getElementById('f-m-codigo').value.trim().toUpperCase(),tipo:document.getElementById('f-m-tipo').value,costo:parseFloat(document.getElementById('f-m-costo').value)||0,pventa:parseFloat(document.getElementById('f-m-pventa').value)||0,deposito:parseInt(document.getElementById('f-m-dep').value)||0,thiers:parseInt(document.getElementById('f-m-thiers').value)||0,lido:parseInt(document.getElementById('f-m-lido').value)||0,fecha:document.getElementById('f-m-fecha').value,notas:document.getElementById('f-m-notas').value.trim()};
+  if(!obj.marca||!obj.codigo){alert('Ingresá marca y código');return;}
+  if(eid){const idx=items.findIndex(x=>x.id==eid);items[idx]={...items[idx],...obj};addHist('ajuste','Edición: '+obj.marca+' '+obj.codigo);}
+  else{obj.id=nextId++;items.push(obj);addHist('ingreso','Nuevo: '+obj.marca+' '+obj.codigo+' — '+obj.tipo);}
+  closeModal('nuevo');populateFilters();renderTable();
+  toast('Guardando...','#856404');
+  await save(['stock','historial']);
+  toast('Reloj guardado ✓','#2D7A0F');
+}
+
+function ajustarItem(id){
+  const i=items.find(x=>x.id===id);if(!i)return;
+  document.getElementById('aj-id').value=id;
+  document.getElementById('aj-info').innerHTML='<strong>'+i.marca+' '+i.codigo+'</strong> — '+i.tipo+'<br><span style="font-size:11px;color:#666;display:block;margin-top:3px">Dep: '+(i.deposito||0)+' | Thier\'s: '+(i.thiers||0)+' | Lido: '+(i.lido||0)+'</span>';
+  document.getElementById('aj-cant').value=1;document.getElementById('aj-motivo').value='';
+  openModal('ajuste');
+}
+
+async function aplicarAjuste(){
+  const id=parseInt(document.getElementById('aj-id').value);
+  const lugar=document.getElementById('aj-lugar').value;
+  const tipo=document.getElementById('aj-tipo').value;
+  const cant=parseInt(document.getElementById('aj-cant').value)||0;
+  const mot=document.getElementById('aj-motivo').value;
+  const idx=items.findIndex(x=>x.id===id);if(idx<0)return;
+  const i=items[idx];const prev=i[lugar]||0;
+  if(tipo==='ingreso')i[lugar]=prev+cant;
+  else if(tipo==='egreso')i[lugar]=Math.max(0,prev-cant);
+  else i[lugar]=Math.max(0,cant);
+  addHist('ajuste','Ajuste '+lugar+' ('+tipo+') x'+cant+': '+i.marca+' '+i.codigo+(mot?' — '+mot:''));
+  closeModal('ajuste');renderTable();
+  toast('Guardando...','#856404');
+  await save(['stock','historial']);
+  toast('Stock ajustado ✓','#2D7A0F');
+}
+
+function buscarVenta(){
+  const q=document.getElementById('v-search').value.toLowerCase();
+  const res=document.getElementById('v-results');
+  if(!q){res.style.display='none';return;}
+  const matches=items.filter(i=>(i.marca+' '+i.codigo+' '+i.tipo).toLowerCase().includes(q)).slice(0,8);
+  if(!matches.length){res.style.display='none';return;}
+  res.style.display='block';
+  res.innerHTML=matches.map(i=>'<div class="search-result-item" onclick="selVenta('+i.id+')">'+i.marca+' <strong>'+i.codigo+'</strong> <span style="color:#888;font-size:11px">— '+i.tipo+'</span></div>').join('');
+}
+function selVenta(id){
+  ventaItem=items.find(x=>x.id===id);
+  document.getElementById('v-results').style.display='none';
+  document.getElementById('v-search').value=ventaItem.marca+' '+ventaItem.codigo;
+  document.getElementById('v-seleccionado').style.display='block';
+  document.getElementById('v-sel-nombre').textContent=ventaItem.marca+' — '+ventaItem.codigo;
+  const t=(ventaItem.deposito||0)+(ventaItem.thiers||0)+(ventaItem.lido||0);
+  document.getElementById('v-sel-info').textContent=ventaItem.tipo+' | Costo: $'+ventaItem.costo+' | Stock: '+t+' (Dep:'+(ventaItem.deposito||0)+' Thiers:'+(ventaItem.thiers||0)+' Lido:'+(ventaItem.lido||0)+')';
+  if(ventaItem.pventa)document.getElementById('v-precio').value=ventaItem.pventa;
+  document.getElementById('v-fecha').value=new Date().toISOString().split('T')[0];
+}
+async function registrarVenta(){
+  if(!ventaItem){alert('Seleccioná un reloj');return;}
+  const lugar=document.getElementById('v-lugar').value;
+  const precio=parseFloat(document.getElementById('v-precio').value)||0;
+  const cant=parseInt(document.getElementById('v-cantidad').value)||1;
+  const fecha=document.getElementById('v-fecha').value;
+  const notas=document.getElementById('v-notas').value;
+  if((ventaItem[lugar]||0)<cant){alert('Stock insuficiente en '+lugar+' (hay '+(ventaItem[lugar]||0)+')');return;}
+  const idx=items.findIndex(x=>x.id===ventaItem.id);items[idx][lugar]-=cant;
+  ventas.unshift({fecha,marca:ventaItem.marca,codigo:ventaItem.codigo,tipo:ventaItem.tipo,lugar,cant,precio,costo:ventaItem.costo,notas});
+  addHist('venta','Venta: '+ventaItem.marca+' '+ventaItem.codigo+' x'+cant+' en '+lugar+' $'+precio);
+  ventaItem=null;
+  ['v-search','v-precio','v-notas'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('v-cantidad').value='1';
+  document.getElementById('v-seleccionado').style.display='none';
+  renderVentas();renderTable();
+  toast('Guardando...','#856404');
+  await save(['stock','ventas','historial']);
+  toast('Venta registrada ✓','#2D7A0F');
+}
+function renderVentas(){
+  const totalV=ventas.reduce((a,v)=>a+(v.precio||0)*v.cant,0);
+  const totalG=ventas.reduce((a,v)=>a+((v.precio||0)-v.costo)*v.cant,0);
+  const totalU=ventas.reduce((a,v)=>a+v.cant,0);
+  document.getElementById('v-summary').innerHTML='<div class="card"><div class="lbl">Unidades</div><div class="val">'+totalU+'</div></div><div class="card"><div class="lbl">Facturado</div><div class="val" style="font-size:14px">$'+totalV.toLocaleString('es-AR')+'</div></div><div class="card"><div class="lbl">Ganancia est.</div><div class="val" style="font-size:14px;color:'+(totalG>=0?'#1A6B2E':'#842029')+'">$'+totalG.toLocaleString('es-AR')+'</div></div>';
+  const vb=document.getElementById('ventas-body');
+  if(!ventas.length){vb.innerHTML='<tr><td colspan="7"><div class="empty-state">Sin ventas.</div></td></tr>';return;}
+  vb.innerHTML=ventas.slice(0,50).map(v=>{const g=(v.precio||0)-v.costo;return '<tr><td>'+v.fecha+'</td><td>'+v.marca+'</td><td style="font-family:monospace;font-size:11px">'+v.codigo+'</td><td>'+v.lugar+'</td><td style="text-align:center">'+v.cant+'</td><td>$'+(v.precio||0).toLocaleString('es-AR')+'</td><td style="color:'+(g>=0?'#1A6B2E':'#842029')+';font-weight:600">'+(v.precio?'$'+g.toLocaleString('es-AR'):'—')+'</td></tr>';}).join('');
+}
+
+function renderMarcas(){
+  var html='<div style="margin-bottom:8px;font-size:12px;color:#888">'+marcas.length+' marcas</div>';
+  marcas.slice().sort().forEach(function(m){
+    html+='<span class="marca-chip">'+m+'<button class="del-marca" data-m="'+m.replace(/&/g,'&amp;').replace(/"/g,'&quot;')+'">\u00d7</button></span>';
+  });
+  document.getElementById('marcas-list').innerHTML=html;
+  document.querySelectorAll('.del-marca').forEach(function(b){
+    b.onclick=function(){eliminarMarca(this.getAttribute('data-m'));};
+  });
+}
+
+async function eliminarMarca(m){
+  if(items.some(function(i){return i.marca===m;})){alert('No se puede eliminar: hay relojes con la marca "'+m+'"');return;}
+  if(!confirm('\u00bfEliminar la marca "'+m+'"?'))return;
+  marcas=marcas.filter(function(x){return x!==m;});
+  populateFilters();renderMarcas();
+  await save(['marcas']);
+}
+
+function addHist(tipo,desc){historial.unshift({tipo,desc,fecha:new Date().toLocaleString('es-AR')});if(historial.length>500)historial=historial.slice(0,500);}
+function renderHistorial(){
+  const q=(document.getElementById('h-search').value||'').toLowerCase();
+  const f=document.getElementById('h-filter').value;
+  const filtered=historial.filter(h=>{if(f&&h.tipo!==f)return false;if(q&&!h.desc.toLowerCase().includes(q))return false;return true;}).slice(0,100);
+  const list=document.getElementById('historial-list');
+  if(!filtered.length){list.innerHTML='<div class="empty-state">Sin eventos.</div>';return;}
+  list.innerHTML=filtered.map(h=>'<div class="hist-item"><span class="badge '+(h.tipo==='venta'?'out':h.tipo==='ingreso'?'ok':'low')+'" style="margin-right:8px">'+h.tipo+'</span>'+h.desc+'<div class="hist-meta">'+h.fecha+'</div></div>').join('');
+}
+
+function showTab(name,el){
+  ['stock','ventas','marcas','historial'].forEach(t=>document.getElementById('tab-'+t).classList.add('section-hidden'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.remove('section-hidden');
+  el.classList.add('active');
+  if(name==='ventas')renderVentas();
+  if(name==='marcas'){populateFilters();renderMarcas();}
+  if(name==='historial')renderHistorial();
+}
+
+function escapeCsv(v){const s=String(v===null||v===undefined?'':v);return(s.includes(',')||s.includes('"')||s.includes('\n'))?'"'+s.replace(/"/g,'""')+'"':s;}
+function downloadCsv(filename,rows){
+  const csv=rows.map(r=>r.map(escapeCsv).join(',')).join('\r\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  a.href=url;a.download=filename;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
+  toast('Descargado ✓','#2D7A0F');
+}
+function exportCSV(tipo){
+  const fecha=new Date().toISOString().split('T')[0];
+  if(tipo==='stock'){
+    const fi=filteredItems();
+    const rows=[['Marca','Código','Tipo','Precio Costo','Precio Venta','Depósito',"Thier's",'Lido','Total','Estado','Última Compra','Notas']];
+    fi.forEach(i=>rows.push([i.marca,i.codigo,i.tipo,i.costo,i.pventa||0,i.deposito||0,i.thiers||0,i.lido||0,i.total,estado(i)==='ok'?'En stock':estado(i)==='low'?'Stock bajo':'Sin stock',i.fecha||'',i.notas||'']));
+    downloadCsv('stock_relojeria_'+fecha+'.csv',rows);
+  }else if(tipo==='ventas'){
+    const rows=[['Fecha','Marca','Código','Tipo','Lugar','Cantidad','Precio Venta','Costo','Ganancia','Notas']];
+    ventas.forEach(v=>rows.push([v.fecha,v.marca,v.codigo,v.tipo,v.lugar,v.cant,v.precio||0,v.costo,(v.precio||0)-v.costo,v.notas||'']));
+    downloadCsv('ventas_relojeria_'+fecha+'.csv',rows);
+  }else{
+    const rows=[['Fecha','Tipo','Descripción']];
+    historial.forEach(h=>rows.push([h.fecha,h.tipo,h.desc]));
+    downloadCsv('historial_relojeria_'+fecha+'.csv',rows);
+  }
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));});
+document.addEventListener('click',e=>{if(!e.target.closest('#v-search')&&!e.target.closest('#v-results')){const r=document.getElementById('v-results');if(r)r.style.display='none';}});
+
+cargarDatos();
+</script>
+</body>
+</html>
