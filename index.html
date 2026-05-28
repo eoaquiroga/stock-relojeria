@@ -676,21 +676,34 @@ function downloadCsv(filename,rows){
   setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
   toast('Descargado ✓','#2D7A0F');
 }
+function limpiarFecha(f){
+  if(!f) return '';
+  try {
+    const d = new Date(f);
+    if(!isNaN(d.getTime())) return d.toLocaleDateString('es-AR');
+  } catch(e){}
+  return String(f);
+}
+function limpiarLugar(l){
+  const m={'thiers':"Thier's",'lido':'Lido','deposito':'Depósito'};
+  return m[l]||l||'';
+}
+
 function exportXLSX(tipo){
   const fecha=new Date().toISOString().split('T')[0];
   let rows=[], sheetName='', filename='';
   if(tipo==='stock'){
     sheetName='Stock';filename='stock_relojeria_'+fecha+'.xlsx';
     rows=[['Marca','Código','Tipo','Precio Costo ($)','Precio Venta ($)','Stock Depósito',"Stock Thier's",'Stock Lido','Stock Total','Estado','Última Compra','Notas']];
-    filteredItems().forEach(i=>rows.push([i.marca,i.codigo,i.tipo,Number(i.costo)||0,Number(i.pventa)||0,Number(i.deposito)||0,Number(i.thiers)||0,Number(i.lido)||0,Number(i.total)||0,estado(i)==='ok'?'En stock':estado(i)==='low'?'Stock bajo':'Sin stock',i.fecha||'',i.notas||'']));
+    filteredItems().forEach(i=>rows.push([i.marca,i.codigo,i.tipo,Number(i.costo)||0,Number(i.pventa)||0,Number(i.deposito)||0,Number(i.thiers)||0,Number(i.lido)||0,Number(i.total)||0,estado(i)==='ok'?'En stock':estado(i)==='low'?'Stock bajo':'Sin stock',limpiarFecha(i.fecha),i.notas||'']));
   } else if(tipo==='ventas'){
     sheetName='Ventas';filename='ventas_relojeria_'+fecha+'.xlsx';
     rows=[['Fecha','Marca','Código','Tipo de Reloj','Lugar de Venta','Cantidad','Precio de Venta ($)','Precio de Costo ($)','Ganancia ($)','Notas']];
-    ventas.forEach(v=>rows.push([v.fecha,v.marca,v.codigo,v.tipo,v.lugar,Number(v.cant)||0,Number(v.precio)||0,Number(v.costo)||0,(Number(v.precio)||0)-(Number(v.costo)||0),v.notas||'']));
+    ventas.forEach(v=>rows.push([limpiarFecha(v.fecha),v.marca,v.codigo,v.tipo,limpiarLugar(v.lugar),Number(v.cant)||0,Number(v.precio)||0,Number(v.costo)||0,(Number(v.precio)||0)-(Number(v.costo)||0),v.notas||'']));
   } else {
     sheetName='Historial';filename='historial_relojeria_'+fecha+'.xlsx';
     rows=[['Fecha y Hora','Tipo de Movimiento','Descripción']];
-    historial.forEach(h=>rows.push([h.fecha,h.tipo,h.desc]));
+    historial.forEach(h=>rows.push([limpiarFecha(h.fecha),h.tipo,h.desc]));
   }
 
   if(typeof XLSX !== 'undefined'){
@@ -725,7 +738,7 @@ function exportCSV(tipo){
     downloadCsv('ventas_relojeria_'+fecha+'.csv',rows);
   }else{
     const rows=[['Fecha','Tipo','Descripción']];
-    historial.forEach(h=>rows.push([h.fecha,h.tipo,h.desc]));
+    historial.forEach(h=>rows.push([limpiarFecha(h.fecha),h.tipo,h.desc]));
     downloadCsv('historial_relojeria_'+fecha+'.csv',rows);
   }
 }
