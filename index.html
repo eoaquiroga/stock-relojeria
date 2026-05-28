@@ -103,8 +103,8 @@ tr:hover td{background:#fafafa}
     <div class="top-btns">
       <span class="sync-status syncing" id="sync-status">⏳ Sincronizando...</span>
       <button class="btn" onclick="cargarDatos()">🔄 Actualizar</button>
-      <button class="btn green" onclick="exportCSV('stock')">↓ CSV Stock</button>
-      <button class="btn green" onclick="exportCSV('ventas')">↓ CSV Ventas</button>
+      <button class="btn green" onclick="exportXLSX('stock')">↓ Excel Stock</button>
+      <button class="btn green" onclick="exportXLSX('ventas')">↓ Excel Ventas</button>
       <button class="btn primary" onclick="openModal('nuevo')">+ Agregar reloj</button>
     </div>
   </div>
@@ -195,7 +195,7 @@ tr:hover td{background:#fafafa}
       <div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
           <h2 style="font-size:15px;font-weight:600">Ventas registradas</h2>
-          <button class="btn sm green" onclick="exportCSV('ventas')">↓ CSV</button>
+          <button class="btn sm green" onclick="exportXLSX('ventas')">↓ CSV</button>
         </div>
         <div class="cards" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:1rem" id="v-summary"></div>
         <div class="tbl-wrap">
@@ -253,7 +253,7 @@ tr:hover td{background:#fafafa}
         <select style="height:30px;padding:0 9px;border-radius:7px;border:1px solid #ddd;font-size:12px;outline:none" id="h-filter" onchange="renderHistorial()">
           <option value="">Todos</option><option value="ingreso">Ingresos</option><option value="venta">Ventas</option><option value="ajuste">Ajustes</option>
         </select></div>
-      <button class="btn sm green" onclick="exportCSV('historial')">↓ CSV</button>
+      <button class="btn sm green" onclick="exportXLSX('historial')">↓ CSV</button>
     </div>
     <div id="historial-list"></div>
   </div>
@@ -676,6 +676,42 @@ function downloadCsv(filename,rows){
   setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
   toast('Descargado ✓','#2D7A0F');
 }
+function exportXLSX(tipo){
+  const fecha=new Date().toISOString().split('T')[0];
+  let rows=[], sheetName='', filename='';
+  if(tipo==='stock'){
+    sheetName='Stock';filename='stock_relojeria_'+fecha+'.xlsx';
+    rows=[['Marca','Código','Tipo','Precio Costo ($)','Precio Venta ($)','Stock Depósito',"Stock Thier's",'Stock Lido','Stock Total','Estado','Última Compra','Notas']];
+    filteredItems().forEach(i=>rows.push([i.marca,i.codigo,i.tipo,Number(i.costo)||0,Number(i.pventa)||0,Number(i.deposito)||0,Number(i.thiers)||0,Number(i.lido)||0,Number(i.total)||0,estado(i)==='ok'?'En stock':estado(i)==='low'?'Stock bajo':'Sin stock',i.fecha||'',i.notas||'']));
+  } else if(tipo==='ventas'){
+    sheetName='Ventas';filename='ventas_relojeria_'+fecha+'.xlsx';
+    rows=[['Fecha','Marca','Código','Tipo de Reloj','Lugar de Venta','Cantidad','Precio de Venta ($)','Precio de Costo ($)','Ganancia ($)','Notas']];
+    ventas.forEach(v=>rows.push([v.fecha,v.marca,v.codigo,v.tipo,v.lugar,Number(v.cant)||0,Number(v.precio)||0,Number(v.costo)||0,(Number(v.precio)||0)-(Number(v.costo)||0),v.notas||'']));
+  } else {
+    sheetName='Historial';filename='historial_relojeria_'+fecha+'.xlsx';
+    rows=[['Fecha y Hora','Tipo de Movimiento','Descripción']];
+    historial.forEach(h=>rows.push([h.fecha,h.tipo,h.desc]));
+  }
+
+  if(typeof XLSX !== 'undefined'){
+    try{
+      const wb=XLSX.utils.book_new();
+      const ws=XLSX.utils.aoa_to_sheet(rows);
+      // Ancho de columnas automático
+      const colWidths=rows[0].map((_,ci)=>({wch:Math.max(...rows.map(r=>String(r[ci]||'').length),rows[0][ci].length)+2}));
+      ws['!cols']=colWidths;
+      // Estilo encabezado (solo en versiones que lo soportan)
+      XLSX.utils.book_append_sheet(wb,ws,sheetName);
+      XLSX.writeFile(wb,filename);
+      toast('Excel descargado ✓','#2D7A0F');
+      return;
+    } catch(e){ console.error('XLSX error:',e); }
+  }
+  // Fallback CSV
+  downloadCsv(filename.replace('.xlsx','.csv'), rows);
+  toast('Descargado como CSV (Excel no disponible)','#856404');
+}
+
 function exportCSV(tipo){
   const fecha=new Date().toISOString().split('T')[0];
   if(tipo==='stock'){
@@ -699,5 +735,6 @@ document.addEventListener('click',e=>{if(!e.target.closest('#v-search')&&!e.targ
 
 cargarDatos();
 </script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 </body>
 </html>
